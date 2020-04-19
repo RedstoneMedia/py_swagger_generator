@@ -70,7 +70,7 @@ def main():
         }
     ]
 
-    answers = {"swagger_document_file" : "task.yaml", "template_path" : "templates/route.yaml"} #prompt(questions)
+    answers = prompt(questions)
     document_yaml_path = answers['swagger_document_file']
     args = swagger_generator.from_template(answers['template_path'])
 
