@@ -2,7 +2,8 @@
 **/__pycache__
 *.py[cod]
 dist/
+py_swagger_generator.egg-info/
+build/
 
 # Jet Brains IDE
 .idea/
-py_swagger_generator.egg-info/
