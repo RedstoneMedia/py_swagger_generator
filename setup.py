@@ -18,7 +18,6 @@ setup(
     author="RedstoneMedia",
     keywords="swagger generator templates tool",
     license="GNU General Public License v3.0",
-    requires_python=">=3.7",
     packages=["swagger_generator"],
     include_package_data=True,
     install_requires=["PyYAML>=5.3.1", "PyInquirer>=1.0.3"],
