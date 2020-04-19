@@ -28,7 +28,7 @@ def get_input_to_fill_templates(args : swagger_generator.TemplateArgs, parent_ar
                     fill_deep_object = True
             if fill_deep_object:
 
-                if arg.multiple_type == "ONE_OR_MORE":
+                if arg.multiple_type in ["ONE_OR_MORE", "ONE_OR_MORE_LIST"]:
                     ref_copy = copy.deepcopy(arg.reference_object)
                     arg.reference_object = []
 
@@ -51,9 +51,11 @@ def main():
 
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--r", required=False, default=False, help="Insert generated under routes", action="store_true")
+    arg_parser.add_argument("--verbose", required=False, default=False, help="Shows more information", action="store_true")
     parsed_cmd_args = arg_parser.parse_args()
 
     insert_at_routes = parsed_cmd_args.r
+    verbose = parsed_cmd_args.verbose
 
     questions = [
         {
@@ -68,12 +70,16 @@ def main():
         }
     ]
 
-    answers = prompt(questions)
+    answers = {"swagger_document_file" : "task.yaml", "template_path" : "templates/route.yaml"} #prompt(questions)
     document_yaml_path = answers['swagger_document_file']
     args = swagger_generator.from_template(answers['template_path'])
 
     get_input_to_fill_templates(args)
+    if verbose:
+        print("Building arguments")
     new_swagger = args.build()
+    if verbose:
+        print("Reading input document")
     document_data = swagger_generator.util.read_file_yaml(document_yaml_path)
     if insert_at_routes:
         routes = swagger_generator.swagger_info.get_routes_info(document_data).keys()
@@ -87,12 +93,21 @@ def main():
             }
         ]
         chosen_route = prompt(questions)["route"]
+        if verbose:
+            print("Inserting created data into input document")
         document_data = swagger_generator.insert_route_data_into_document_data_at_index(new_swagger, document_data,
                                                                                        swagger_generator.util.find_index_in_list(
                                                                                            routes, chosen_route) + 1)
     else:
+        if verbose:
+            print("Inserting created data into input document")
         document_data = swagger_generator.insert_data_into_document_data_at_end(new_swagger, document_data)
+
+    if verbose:
+        print("Overwriting input document")
     swagger_generator.util.write_file_yaml(document_yaml_path, document_data)
+    if verbose:
+        print("Done")
 
 
 if __name__ == "__main__":

@@ -79,13 +79,16 @@ class TemplateArgs:
     def __create_placeholder_yaml_insert(self, arg : TemplateArg, indent : int):
         return f"PLACEHOLDER_SWAGGER_GEN_REAL_ID_{arg.real_unique_id}:\n" + self.INDENT * indent + self.INDENT + f"'{arg.real_unique_id}'"
 
-    def __create_placeholders_yaml_insert(self, arg : TemplateArg, indent : int):
+    def __create_placeholders_yaml_insert(self, arg : TemplateArg, indent : int, for_list : bool = False):
+        add_to_line = ""
+        if for_list:
+            add_to_line = "- "
         return_string = ""
         for i in range(0, len(arg.reference_object)):
             if i == 0:
-                return_string += f"- PLACEHOLDER_SWAGGER_GEN_REAL_ID_{arg.real_unique_id}_{i}: '{arg.real_unique_id}_{i}'"
+                return_string += f"{add_to_line}PLACEHOLDER_SWAGGER_GEN_REAL_ID_{arg.real_unique_id}_{i}: '{arg.real_unique_id}_{i}'"
             else:
-                return_string += "\n"+ self.INDENT * indent + f"- PLACEHOLDER_SWAGGER_GEN_REAL_ID_{arg.real_unique_id}_{i}: '{arg.real_unique_id}_{i}'"
+                return_string += "\n"+ self.INDENT * indent + f"{add_to_line}PLACEHOLDER_SWAGGER_GEN_REAL_ID_{arg.real_unique_id}_{i}: '{arg.real_unique_id}_{i}'"
         return return_string
 
     def __create_placeholders_pair_insert(self, arg : TemplateArg, index : int):
@@ -107,14 +110,18 @@ class TemplateArgs:
                                     indent = math.floor(len(line[:arg.char_index_start]) / len(self.INDENT))
                                     reference_args_and_indents[arg] = indent
                                     template_args.__lines[i] = line.replace("{{" + str(arg.id) + "}}", self.__create_placeholder_yaml_insert(arg, indent))
-                        elif arg.multiple_type == "ONE_OR_MORE":
+                        elif arg.multiple_type in ["ONE_OR_MORE", "ONE_OR_MORE_LIST"]:
                             for i, list_args in enumerate(args_dict[key]):
                                 self.__insert_values_into_lines(arg.reference_object[i], list_args)
                             for i, line in enumerate(template_args.__lines):
                                 if line.find("{{" + str(arg.id) + "}}") != -1:
                                     indent = math.floor(len(line[:arg.char_index_start]) / len(self.INDENT))
                                     reference_args_and_indents[arg] = indent
-                                    template_args.__lines[i] = line.replace("{{" + str(arg.id) + "}}",self.__create_placeholders_yaml_insert(arg, indent))
+                                    print(arg.multiple_type)
+                                    if arg.multiple_type == "ONE_OR_MORE_LIST":
+                                        template_args.__lines[i] = line.replace("{{" + str(arg.id) + "}}",self.__create_placeholders_yaml_insert(arg, indent, for_list=True))
+                                    else:
+                                        template_args.__lines[i] = line.replace("{{" + str(arg.id) + "}}", self.__create_placeholders_yaml_insert(arg, indent))
 
                     elif arg.is_filled:
                         for i, line in enumerate(template_args.__lines):
@@ -143,9 +150,13 @@ class TemplateArgs:
                             keys_to_remove.append(j)
                             parent_dict[parent_key_name][get_first_key_in_dict(i.reference_object.__yaml_data)] = unwrap_first_dict(i.reference_object.__yaml_data)
                 parent_dict[parent_key_name] = move_dict_key(parent_dict[parent_key_name], get_first_key_in_dict(i.reference_object.__yaml_data), found_index)
-            elif i.multiple_type == "ONE_OR_MORE":
+            elif i.multiple_type in ["ONE_OR_MORE", "ONE_OR_MORE_LIST"]:
                 for j in range(0, len(i.reference_object)):
-                    parent_dict, found_index, parent_key_name = find_dict_with_depth(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), reference_args_and_indents[i]+1, find_by_value=True)
+                    print(self.__create_placeholders_pair_insert(i, j))
+                    if i.multiple_type == "ONE_OR_MORE_LIST":
+                        parent_dict, found_index, parent_key_name = find_dict_with_depth(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), reference_args_and_indents[i] + 1, find_by_value=True)
+                    else:
+                        parent_dict, found_index, parent_key_name = find_dict_with_depth(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), reference_args_and_indents[i], find_by_value=True)
                     search_obj = deepcopy(parent_dict[parent_key_name])
                     for k in search_obj:
                         if "PLACEHOLDER_SWAGGER_GEN_REAL_ID" in k:
@@ -164,7 +175,7 @@ class TemplateArgs:
                     if arg.multiple_type == "SINGLE":
                         object[arg.key_name] = {}
                         self.__convert_template_args_to_dict(arg.reference_object.template_args, object[arg.key_name])
-                    elif arg.multiple_type == "ONE_OR_MORE":
+                    elif arg.multiple_type in ["ONE_OR_MORE", "ONE_OR_MORE_LIST"]:
                         object[arg.key_name] = []
                         for reference_object in arg.reference_object: # arg.reference object is a list in this case
                             object[arg.key_name].append({})

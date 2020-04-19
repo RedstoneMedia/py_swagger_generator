@@ -8,7 +8,7 @@ class TemplateArg:
         0 : "^[A-Z_]+$",
         1 : ["STRING", "INTEGER", "OBJECT", "SCHEMA"],
         2 : ["REQUIRED", "OPTIONAL"],
-        3 : ["SINGLE", "ONE_OR_MORE"],
+        3 : ["SINGLE", "ONE_OR_MORE", "ONE_OR_MORE_LIST"],
         4 : "^.+\.yaml$"
     }
 

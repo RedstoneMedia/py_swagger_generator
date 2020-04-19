@@ -8,4 +8,4 @@ from swagger_generator.template_arg import TemplateArg
 import sys
 assert sys.version_info >= (3, 7)
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"
