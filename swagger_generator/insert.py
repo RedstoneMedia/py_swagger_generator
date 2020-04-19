@@ -8,6 +8,10 @@ def insert_route_data_into_document_data_at_end(route_data : dict, document_data
 def insert_route_data_into_document_data_at_start(route_data : dict, document_data : dict):
     return insert_route_data_into_document_data_at_index(route_data, document_data, 0)
 
+def insert_data_into_document_data_at_end(data : dict, document_data : dict):
+    document_data[get_first_key_in_dict(data)] = unwrap_first_dict(data)
+    return document_data
+
 def insert_route_data_into_document_data_at_index(route_data : dict, document_data : dict, index : int):
     if len(document_data["paths"]) - 1 <= index:
         index = len(route_data) - 1

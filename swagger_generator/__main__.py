@@ -91,7 +91,7 @@ def main():
                                                                                        swagger_generator.util.find_index_in_list(
                                                                                            routes, chosen_route) + 1)
     else:
-        document_data = swagger_generator.insert_route_data_into_document_data_at_end(new_swagger, document_data)
+        document_data = swagger_generator.insert_data_into_document_data_at_end(new_swagger, document_data)
     swagger_generator.util.write_file_yaml(document_yaml_path, document_data)
 
 
