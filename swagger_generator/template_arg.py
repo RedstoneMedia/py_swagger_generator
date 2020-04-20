@@ -1,15 +1,17 @@
 import re
 import random
 from copy import deepcopy
+from swagger_generator.data_type import DataType
+
 
 class TemplateArg:
 
     TEMPLATE_ARGUMENTS_ARGUMENTS = {
-        0 : "^[A-Z_]+$",
-        1 : ["STRING", "INTEGER", "OBJECT", "SCHEMA"],
+        0 : r"^[A-Z_]+$",
+        1 : ["STRING", "INTEGER", "OBJECT", "SCHEMA", r"^CHOICE<(STRING|INTEGER|OBJECT)>\(([a-zA-Z!\"'#+*~?=/&%$§^°`´._]+\|)*[a-zA-Z!\"'#+*~?=/&%$§^°`´._]+\)$"],
         2 : ["REQUIRED", "OPTIONAL"],
         3 : ["SINGLE", "ONE_OR_MORE", "ONE_OR_MORE_LIST"],
-        4 : "^.+\.yaml$"
+        4 : r"^.+\.yaml$"
     }
 
     def __init__(self, arg_data_string : str, line_index : int, char_index_start : int, char_index_end : int, id : int, file_name : str):
@@ -62,7 +64,7 @@ class TemplateArg:
             if i == 0:
                 self.key_name = arg
             elif i == 1:
-                self.data_type = arg
+                self.data_type = DataType(arg)
             elif i == 2:
                 if arg == possible_arguments_for_index[0]:
                     self.required = True
@@ -76,7 +78,6 @@ class TemplateArg:
                 else:
                     print(f"Template argument is invalid in file {self.file_name} at line {self.line_index + 1} : Argument references a template, but the data_type is {self.data_type} and not OBJECT")
                     return None
-
         return True
 
     def fill(self, value):
@@ -88,24 +89,17 @@ class TemplateArg:
         elif isinstance(value, list):
             self.value = []
             for i in value:
-                self.value.append(self.__fill(i))
+                if self.data_type.check_fill(i):
+                    self.is_filled = True
+                    self.value.append(i)
+                else:
+                    self.is_filled = False
         else:
-            self.value = self.__fill(value)
-
-
-    def __fill(self, value):
-        if self.data_type == "STRING" and not isinstance(value, str):
-            print(f"Data type is string, but the given value has the type : {type(value)}")
-            self.is_filled = False
-        elif self.data_type == "INTEGER" and not isinstance(value, int):
-            print(f"Data type is integer, but the given value has the type : {type(value)}")
-            self.is_filled = False
-        elif self.data_type == "OBJECT" and not isinstance(value, TemplateArg):
-            print(f"Data type is integer, but the given value has the type : {type(value)}")
-            self.is_filled = False
-        self.is_filled = True
-        return value
-
+            if self.data_type.check_fill(value):
+                self.is_filled = True
+                self.value = value
+            else:
+                self.is_filled = False
 
 
     def __deepcopy__(self, memodict={}):

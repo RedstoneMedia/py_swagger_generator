@@ -3,6 +3,7 @@ from swagger_generator.insert import *
 from swagger_generator import util
 from swagger_generator import swagger_info
 from swagger_generator.template_arg import TemplateArg
+from swagger_generator.data_type import DataType
 
 
 import sys

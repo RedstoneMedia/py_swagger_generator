@@ -13,9 +13,11 @@ class TemplateArgs:
 
     INDENT = "  "
 
-    def __init__(self, template_path : str):
+    def __init__(self, template_path : str, auto_read = True):
         self.template_path = template_path
-        self.template_string = self.__read_template(template_path)
+        self.template_string = None
+        if auto_read:
+            self.template_string = self.__read_template(template_path)
         self.template_args = []
 
         self.args = {}
