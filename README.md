@@ -1,4 +1,4 @@
-# Python Swagger Generator
+# Python Swagger Generator v.1.0.4
 
 This is a package for python to automatically create swagger documentation yaml files using templates.
 

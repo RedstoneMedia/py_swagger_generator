@@ -9,4 +9,4 @@ from swagger_generator.data_type import DataType
 import sys
 assert sys.version_info >= (3, 7)
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
