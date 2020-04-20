@@ -51,7 +51,7 @@ class TemplateArgs:
                 char_index_start = i - 1
             last_char = c
 
-        if char_index_start and char_index_end and len(argument_data) > 0:
+        if char_index_start != None and char_index_end != None and len(argument_data) > 0:
             argument_id = random.randint(0, 4294967296)
             argument = TemplateArg(argument_data, line_index, char_index_start, char_index_end, argument_id, self.template_path)
             argument.parse_argument_data_string()
