@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="py-swagger-generator",
-    version="1.0.4",
+    version="1.0.5",
     description="A Package that can be used to create swagger yaml using templates",
     long_description=README,
     long_description_content_type="text/markdown",

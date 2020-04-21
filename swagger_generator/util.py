@@ -49,9 +49,12 @@ def find_dict_with_depth(input_dict : dict, input_key, set_depth : int, current_
 
         if current_depth+1 == set_depth and find_by_value:
             if isinstance(input_key, tuple):
-                for j, k in enumerate(input_dict[key]):
-                    if k == input_key[0] and input_dict[key][k] == input_key[1]:
-                        return input_dict, j, key
+                if isinstance(input_dict[key], dict) or isinstance(input_dict[key], list):
+                    for j, k in enumerate(input_dict[key]):
+                        if k == input_key[0] and input_dict[key][k] == input_key[1]:
+                            return input_dict, j, key
+                else:
+                    continue
 
             elif input_key in input_dict[key]:
                 return input_dict, i, key
@@ -68,6 +71,34 @@ def find_dict_with_depth(input_dict : dict, input_key, set_depth : int, current_
             if not find_by_value:
                 if key == input_key:
                     return input_dict, i
+
+
+def find_dict(input_dict : dict, input_key, find_by_value=False):
+    input_dict = input_dict
+    for i, key in enumerate(input_dict):
+        if isinstance(input_dict, list):
+            key = i
+
+        if find_by_value:
+            if isinstance(input_key, tuple):
+                if isinstance(input_dict[key], dict) or isinstance(input_dict[key], list):
+                    for j, k in enumerate(input_dict[key]):
+                        if k == input_key[0] and input_dict[key][k] == input_key[1]:
+                            return input_dict, j, key
+                else:
+                    continue
+            elif input_key in input_dict[key]:
+                return input_dict, i, key
+        if isinstance(input_dict[key], dict):
+            if r := find_dict(input_dict[key], input_key, find_by_value):
+                return r
+        elif isinstance(input_dict[key], list):
+            if r := find_dict(input_dict[key], input_key, find_by_value):
+                return r
+
+        if not find_by_value:
+            if key == input_key:
+                return input_dict, i
 
 
 def get_first_key_in_dict(input_dict : dict):

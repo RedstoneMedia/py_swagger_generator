@@ -1,5 +1,5 @@
 from swagger_generator.template_arg import TemplateArg
-from swagger_generator.util import move_dict_key, find_dict_with_depth, get_first_key_in_dict, unwrap_first_dict, remove_keys_from_dict
+from swagger_generator.util import move_dict_key, find_dict, get_first_key_in_dict, unwrap_first_dict, remove_keys_from_dict
 import random
 
 from os import path
@@ -142,7 +142,7 @@ class TemplateArgs:
         keys_to_remove = []
         for i in reference_args_and_indents:
             if i.multiple_type == "SINGLE":
-                parent_dict, found_index, parent_key_name = find_dict_with_depth(template_args.__yaml_data, self.__create_placeholder_pair_insert(i) , reference_args_and_indents[i], find_by_value=True)
+                parent_dict, found_index, parent_key_name = find_dict(template_args.__yaml_data, self.__create_placeholder_pair_insert(i), find_by_value=True)
                 search_obj = deepcopy(parent_dict[parent_key_name])
                 for j in search_obj:
                     if "PLACEHOLDER_SWAGGER_GEN_REAL_ID" in j:
@@ -153,15 +153,16 @@ class TemplateArgs:
             elif i.multiple_type in ["ONE_OR_MORE", "ONE_OR_MORE_LIST"]:
                 for j in range(0, len(i.reference_object)):
                     if i.multiple_type == "ONE_OR_MORE_LIST":
-                        parent_dict, found_index, parent_key_name = find_dict_with_depth(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), reference_args_and_indents[i] + 1, find_by_value=True)
+                        parent_dict, found_index, parent_key_name = find_dict(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), find_by_value=True)
                     else:
-                        parent_dict, found_index, parent_key_name = find_dict_with_depth(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), reference_args_and_indents[i], find_by_value=True)
+                        parent_dict, found_index, parent_key_name = find_dict(template_args.__yaml_data, self.__create_placeholders_pair_insert(i, j), find_by_value=True)
                     search_obj = deepcopy(parent_dict[parent_key_name])
                     for k in search_obj:
-                        if "PLACEHOLDER_SWAGGER_GEN_REAL_ID" in k:
-                            if search_obj[k] == f"{i.real_unique_id}_{j}":
-                                keys_to_remove.append(k)
-                                parent_dict[parent_key_name][get_first_key_in_dict(i.reference_object[j].__yaml_data)] = unwrap_first_dict(i.reference_object[j].__yaml_data)
+                        if isinstance(k, str):
+                            if "PLACEHOLDER_SWAGGER_GEN_REAL_ID" in k:
+                                if search_obj[k] == f"{i.real_unique_id}_{j}":
+                                    keys_to_remove.append(k)
+                                    parent_dict[parent_key_name][get_first_key_in_dict(i.reference_object[j].__yaml_data)] = unwrap_first_dict(i.reference_object[j].__yaml_data)
         template_args.__yaml_data = remove_keys_from_dict(template_args.__yaml_data, keys_to_remove)  # remove placeholders
 
 

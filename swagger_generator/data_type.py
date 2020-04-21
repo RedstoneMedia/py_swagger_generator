@@ -1,21 +1,26 @@
 import re
+from copy import deepcopy
 
 class DataType:
 
-    TYPES = ["STRING", "INTEGER", "SCHEMA", "OBJECT", "CHOICE"]
+    TYPES = ["STRING", "INTEGER", "SCHEMA", "OBJECT", "CHOOSE_ONE", "CHOOSE_ANY", "CHOOSE_ANY_LIST"]
     ALLOWED_KEYWORD_CHARS = r"^[A-Z_]+$"
+    SPECIAL_DATA_REGEX = r"^{name}<(STRING|INTEGER|OBJECT)>\(([a-zA-Z!\"'#+*~?=/&%$§^°`´._]+\|)*[a-zA-Z!\"'#+*~?=/&%$§^°`´._]+\)$"
 
-    def __init__(self, type_string : str):
+    def __init__(self, type_string : str, file_name : str, line_index : int):
         self.type_string = type_string
+        self.file_name = file_name
+        self.line_index = line_index
         self.basic_type = ""
 
-        self.special_data_type = ""
+        self.special_data_type = None
         self.special_data_arguments = []
 
         self.parse_basic_type_string()
         self.special_data_string = self.type_string[len(self.basic_type):]
         self.parse_special_data_type()
-        self.parse_special_data_arguments()
+        if self.special_data_type:
+            self.parse_special_data_arguments()
 
 
     def parse_basic_type_string(self):
@@ -32,7 +37,7 @@ class DataType:
 
 
     def parse_special_data_type(self):
-        if self.basic_type == "CHOICE":
+        if self.basic_type in ["CHOOSE_ONE", "CHOOSE_ANY", "CHOOSE_ANY_LIST"]:
             special_data_type = ""
             for i, c in enumerate(list(self.special_data_string)):
                 if i == 0:
@@ -48,7 +53,7 @@ class DataType:
             if self.special_data_string:
                 self.special_data_type = special_data_type
             else:
-                Exception("Special data needs special data type")
+                raise Exception(f"Template argument is invalid in file {self.file_name} at line {self.line_index + 1} : Special data needs special data type")
 
 
     def parse_special_data_arguments(self):
@@ -72,31 +77,25 @@ class DataType:
                     current_special_data_argument += c
 
         if len(special_data_arguments) < 1:
-            Exception("Special data needs special data arguments")
+            raise Exception(f"Template argument is invalid in file {self.file_name} at line {self.line_index + 1} : Special data needs special data arguments")
 
         self.special_data_arguments = special_data_arguments
 
 
     def check_fill(self, value):
         if self.basic_type == "STRING" and not isinstance(value, self.get_python_type_from_basic_type()):
-            print(f"Data type is string, but the given value has the type : {type(value)}")
-            return False
+            raise Exception(f"Data type is string, but the given value has the type : {type(value)}")
         elif self.basic_type == "SCHEMA" and not isinstance(value, self.get_python_type_from_basic_type()):
-            print(f"Data type is schema, but the given value has the type : {type(value)}")
-            return False
+            raise Exception(f"Data type is schema, but the given value has the type : {type(value)}")
         elif self.basic_type == "INTEGER" and not isinstance(value, self.get_python_type_from_basic_type()):
-            print(f"Data type is integer, but the given value has the type : {type(value)}")
-            return False
-        elif self.basic_type == "CHOICE":
+            raise Exception(f"Data type is integer, but the given value has the type : {type(value)}")
+        elif self.basic_type == "CHOOSE_ONE" and self.basic_type == "CHOOSE_ANY" and self.basic_type == "CHOOSE_ANY_LIST":
             if not isinstance(value, self.get_python_type_from_basic_type()):
-                print(f"Special data type is {self.special_data_type.lower()}, but the given value has type : {type(value)}")
-                return False
+                raise Exception(f"Special data type is {self.special_data_type.lower()}, but the given value has type : {type(value)}")
             elif self.special_data_type == "OBJECT":
-                print("Special data type is a object, but objects can't be filled")
-                return False
+                raise Exception("Special data type is a object, but objects can't be filled")
         elif self.basic_type == "OBJECT" and not isinstance(value, self.get_python_type_from_basic_type()):
-            print(f"Data type is a object, but given value has the type : {type(value)}")
-            return False
+            raise Exception(f"Data type is a object, but given value has the type : {type(value)}")
 
         return True
 
@@ -110,7 +109,7 @@ class DataType:
             return int
         elif input == "OBJECT":
             return object
-        elif input == "CHOICE":
+        elif input in ["CHOOSE_ONE", "CHOOSE_ANY", "CHOOSE_ANY_LIST"]:
             return self.get_python_type_from_basic_type(self.special_data_type)
 
 
@@ -121,3 +120,6 @@ class DataType:
 
     def __repr__(self):
         return self.type_string
+
+    def __deepcopy__(self, memodict={}):
+        return DataType(self.type_string, self.file_name, self.line_index)

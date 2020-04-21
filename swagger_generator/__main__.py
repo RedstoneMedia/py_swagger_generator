@@ -13,7 +13,7 @@ def get_normal_input(arg, key_strings):
             return input(f"{key_strings}\\{arg.key_name} : Please input '{arg.key_name}' of type '{arg.data_type}' : ")
 
 
-def get_choice_input(arg, key_strings):
+def get_choose_one_input(arg, key_strings):
     if arg.required:
         questions = [
             {
@@ -33,6 +33,36 @@ def get_choice_input(arg, key_strings):
                     "name": "select_value",
                     "message": f"{key_strings}\\{arg.key_name} : Select a value for '{arg.key_name}' of type '{arg.data_type.special_data_type}'",
                     "choices": arg.data_type.special_data_arguments
+                }
+            ]
+            answer = prompt(questions)
+            return answer["select_value"]
+
+
+def get_choose_any_input(arg, key_strings):
+    choices_dict = []
+    for i, choice in enumerate(arg.data_type.special_data_arguments):
+        choices_dict.append({"name" : choice})
+
+    if arg.required:
+        questions = [
+            {
+                "type": "checkbox",
+                "name": "select_value",
+                "message": f"{key_strings}\\{arg.key_name} : Select values for '{arg.key_name}' of type '{arg.data_type.special_data_type}'",
+                "choices": choices_dict
+            }
+        ]
+        answer = prompt(questions)
+        return answer["select_value"]
+    else:
+        if input(f"{key_strings}\\{arg.key_name} : The argument '{arg.key_name}' is optional do you wan't to fill it ? (y/n) : ").lower() == "y":
+            questions = [
+                {
+                    "type": "checkbox",
+                    "name": "select_value",
+                    "message": f"{key_strings}\\{arg.key_name} : Select values for '{arg.key_name}' of type '{arg.data_type.special_data_type}'",
+                    "choices": choices_dict
                 }
             ]
             answer = prompt(questions)
@@ -63,25 +93,53 @@ def get_input_to_fill_templates(args : swagger_generator.TemplateArgs, parent_ar
             arg.fill(int(get_normal_input(arg, key_strings)))
         elif arg.data_type == "SCHEMA":
             arg.fill(get_normal_input(arg, key_strings).replace("\\n", "\n").replace("\\t", "  "))
-        elif arg.data_type == "CHOICE":
-            selected_value = get_choice_input(arg, key_strings)
-            arg.data_type = swagger_generator.DataType(arg.data_type.special_data_type)
+        elif arg.data_type == "CHOOSE_ONE" or arg.data_type == "CHOOSE_ANY" or arg.data_type == "CHOOSE_ANY_LIST":
+            if arg.data_type == "CHOOSE_ONE":
+                selected_value = get_choose_one_input(arg, key_strings)
+            elif arg.data_type == "CHOOSE_ANY" or arg.data_type == "CHOOSE_ANY_LIST":
+                selected_value = get_choose_any_input(arg, key_strings)
+                if arg.data_type == "CHOOSE_ANY":
+                    arg.multiple_type = "ONE_OR_MORE"
+                elif arg.data_type == "CHOOSE_ANY_LIST":
+                    arg.multiple_type = "ONE_OR_MORE_LIST"
+
+            real_data_type = copy.deepcopy(arg.data_type)
+            arg.data_type = swagger_generator.DataType(arg.data_type.special_data_type, arg.data_type.file_name, arg.data_type.line_index)
+            if len(selected_value) <= 0:
+                raise Exception("At least one option has to be selected")
+
             if arg.data_type == "OBJECT":
-                arg.reference_template_path = selected_value
-                arg.reference_object = swagger_generator.from_template(arg.reference_template_path)
-                get_input_to_fill_object_arg(arg, parent_arg, key_strings)
+                if real_data_type == "CHOOSE_ONE":
+                    arg.reference_template_path = selected_value
+                    arg.reference_object = swagger_generator.from_template(arg.reference_template_path)
+                    get_input_to_fill_object_arg(arg, parent_arg, key_strings)
+                elif real_data_type == "CHOOSE_ANY" or real_data_type == "CHOOSE_ANY_LIST":
+                    arg.reference_object = []
+                    for i, selected in enumerate(selected_value):
+                        arg.reference_object.append(swagger_generator.from_template(selected))
+                        get_input_to_fill_templates(arg.reference_object[-1], arg, f"{key_strings}\\{arg.key_name}\\CHOICE_{i}")
+                    arg.is_filled = True
             else:
-                if arg.data_type == "STRING":
-                    arg.fill(selected_value)
-                elif arg.data_type == "INTEGER":
-                    arg.fill(int(selected_value))
-                elif arg.data_type == "SCHEMA":
-                    arg.fill(selected_value.replace("\\n", "\n").replace("\\t", "  "))
+                if real_data_type == "CHOOSE_ANY" or real_data_type == "CHOOSE_ANY_LIST":
+                    for i, selection in enumerate(selected_value):
+                        if arg.data_type == "STRING":
+                            selected_value[i] = selection
+                        elif arg.data_type == "INTEGER":
+                            selected_value[i] = int(selection)
+                        elif arg.data_type == "SCHEMA":
+                            selected_value[i] = selection.replace("\\n", "\n").replace("\\t", "  ")
+                else:
+                    if arg.data_type == "STRING":
+                        selected_value = selected_value
+                    elif arg.data_type == "INTEGER":
+                        selected_value = int(selected_value)
+                    elif arg.data_type == "SCHEMA":
+                        selected_value = selected_value.replace("\\n", "\n").replace("\\t", "  ")
+                arg.fill(selected_value)
         elif arg.data_type == "OBJECT":
             fill_deep_object = arg.required
             if not arg.required:
-                if input(
-                        f"{key_strings}\\{arg.key_name} : The argument '{arg.key_name}' is optional do you wan't to fill it ? (y/n) : ").lower() == "y":
+                if input(f"{key_strings}\\{arg.key_name} : The argument '{arg.key_name}' is optional do you wan't to fill it ? (y/n) : ").lower() == "y":
                     fill_deep_object = True
             if fill_deep_object:
                 get_input_to_fill_object_arg(arg, parent_arg, key_strings)
@@ -89,8 +147,8 @@ def get_input_to_fill_templates(args : swagger_generator.TemplateArgs, parent_ar
 
 
 def main():
-    if sys.version_info >= (3, 7):
-        Exception("Must be using at least Python 3.7")
+    if sys.version_info < (3, 7):
+        raise Exception("Must be using at least Python 3.7")
 
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-r", "--route",  required=False, default=False, help="Insert generated under routes", action="store_true")
@@ -161,8 +219,6 @@ def main():
     if verbose:
         print("[*] Overwriting input document")
     swagger_generator.util.write_file_yaml(document_yaml_path, document_data)
-    if verbose:
-        print("Done")
 
 
 if __name__ == "__main__":

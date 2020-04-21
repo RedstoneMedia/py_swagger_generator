@@ -8,7 +8,7 @@ class TemplateArg:
 
     TEMPLATE_ARGUMENTS_ARGUMENTS = {
         0 : r"^[A-Z_]+$",
-        1 : ["STRING", "INTEGER", "OBJECT", "SCHEMA", r"^CHOICE<(STRING|INTEGER|OBJECT)>\(([a-zA-Z!\"'#+*~?=/&%$§^°`´._]+\|)*[a-zA-Z!\"'#+*~?=/&%$§^°`´._]+\)$"],
+        1 : ["STRING", "INTEGER", "OBJECT", "SCHEMA", r"", DataType.SPECIAL_DATA_REGEX.format(name="CHOOSE_ONE"), DataType.SPECIAL_DATA_REGEX.format(name="CHOOSE_ANY"), DataType.SPECIAL_DATA_REGEX.format(name="CHOOSE_ANY_LIST")],
         2 : ["REQUIRED", "OPTIONAL"],
         3 : ["SINGLE", "ONE_OR_MORE", "ONE_OR_MORE_LIST"],
         4 : r"^.+\.yaml$"
@@ -25,7 +25,7 @@ class TemplateArg:
 
         self.key_name = None
         self.data_type = None
-        self.required = False
+        self.required = True
         self.multiple_type = "SINGLE"
         self.reference_template_path = None
 
@@ -38,7 +38,7 @@ class TemplateArg:
         args = self.arg_data_string.split(",")
 
         if 1 >= len(args):
-            print(f"Template argument is invalid in file {self.file_name} at line {self.line_index+1} : Key name and data type need to be defined")
+            raise Exception(f"Template argument is invalid in file {self.file_name} at line {self.line_index+1} : Key name and data type need to be defined")
 
         for i, arg in enumerate(args):
             arg = arg.replace(" ", "").replace("\t", "")
@@ -57,14 +57,12 @@ class TemplateArg:
                     valid_argument = False
 
             if not valid_argument:
-                print(f"Template argument is invalid in file {self.file_name} at line {self.line_index+1} : Argument at index {i} can only be {possible_arguments_for_index}, but is '{arg}'")
-                return None
-
+                raise Exception(f"Template argument is invalid in file {self.file_name} at line {self.line_index+1} : Argument at index {i} can only be {possible_arguments_for_index}, but is '{arg}'")
 
             if i == 0:
                 self.key_name = arg
             elif i == 1:
-                self.data_type = DataType(arg)
+                self.data_type = DataType(arg, self.file_name, self.line_index)
             elif i == 2:
                 if arg == possible_arguments_for_index[0]:
                     self.required = True
@@ -76,16 +74,15 @@ class TemplateArg:
                 if self.data_type == "OBJECT":
                     self.reference_template_path = arg
                 else:
-                    print(f"Template argument is invalid in file {self.file_name} at line {self.line_index + 1} : Argument references a template, but the data_type is {self.data_type} and not OBJECT")
-                    return None
+                    raise Exception(f"Template argument is invalid in file {self.file_name} at line {self.line_index + 1} : Argument references a template, but the data_type is {self.data_type} and not OBJECT")
         return True
 
     def fill(self, value):
         if value == None:
             return
         if self.multiple_type == "SINGLE" and isinstance(value, list):
-            print(f"multiple type is SINGLE, but the given value contains a list")
             self.is_filled = False
+            raise Exception(f"multiple type is SINGLE, but the given value contains a list")
         elif isinstance(value, list):
             self.value = []
             for i in value:

@@ -7,6 +7,8 @@ from swagger_generator.data_type import DataType
 
 
 import sys
-assert sys.version_info >= (3, 7)
 
-__version__ = "1.0.4"
+if sys.version_info < (3, 7):
+    raise Exception("Must be using at least Python 3.7")
+
+__version__ = "1.0.5"
