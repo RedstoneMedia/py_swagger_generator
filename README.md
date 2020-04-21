@@ -16,7 +16,7 @@ This command currently has 2 arguments :
 - --verbose : Outputs some more debug information
 - -r        : Inserts the generated swagger yaml under the routes in the selected document
 - -d        : Specify the input document file over the command line arguments
-- td        : Specify the input template file over the command line arguments
+- -t        : Specify the input template file over the command line arguments
 
 After specifying your options the tool will ask you which swagger document file you want to target.\
 It will also aks you to input the path of the template you wan't to use to create your new data.
