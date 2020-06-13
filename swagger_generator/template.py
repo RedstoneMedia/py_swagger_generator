@@ -13,11 +13,13 @@ class TemplateArgs:
 
     INDENT = "  "
 
-    def __init__(self, template_path : str, auto_read = True):
-        self.template_path = template_path
+    def __init__(self, template_file : str, template_dir : str, auto_read = True):
+        self.template_path = f"{template_dir}/{template_file}"
+        self.template_dir = template_dir
+        self.template_file = template_file
         self.template_string = None
         if auto_read:
-            self.template_string = self.__read_template(template_path)
+            self.template_string = self.__read_template(self.template_path)
         self.template_args = []
 
         self.args = {}
@@ -57,8 +59,8 @@ class TemplateArgs:
             argument_id = random.randint(0, 4294967296)
             argument = TemplateArg(argument_data, line_index, char_index_start, char_index_end, argument_id, self.template_path)
             argument.parse_argument_data_string()
-            if argument.reference_template_path:
-                argument.reference_object = from_template(argument.reference_template_path)
+            if argument.reference_template_file:
+                argument.reference_object = from_template(argument.reference_template_file, self.template_dir)
             self.__lines[line_index] = line.replace(line[char_index_start:char_index_end], "{{"+ str(argument_id) +"}}")
             self.template_args.append(argument)
 
@@ -183,7 +185,7 @@ class TemplateArgs:
 
 
     def __deepcopy__(self, memodict={}):
-        new_object = TemplateArgs(self.template_path)
+        new_object = TemplateArgs(self.template_file, self.template_dir)
         new_object.template_args = deepcopy(self.template_args, memo=memodict)
         new_object.args = deepcopy(self.args, memo=memodict)
         new_object.__lines = deepcopy(self.__lines, memo=memodict)
@@ -201,7 +203,7 @@ class TemplateArgs:
         return f"TemplateArgs<template_path : {self.template_path}, template_args : ({template_args_string})>"
 
 
-def from_template(template_path : str) -> TemplateArgs:
-    template_args = TemplateArgs(template_path)
+def from_template(template_file : str, template_folder: str) -> TemplateArgs:
+    template_args = TemplateArgs(template_file, template_folder)
     template_args.parse_template_data()
     return template_args

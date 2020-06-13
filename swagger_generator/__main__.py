@@ -1,9 +1,14 @@
 import swagger_generator
 import copy
-from PyInquirer import prompt
 import sys
 import argparse
+import json
 
+"""
+WORK IN PROGRESS
+
+
+from PyInquirer import prompt
 
 def get_normal_input(arg, key_strings):
     if arg.required:
@@ -143,82 +148,28 @@ def get_input_to_fill_templates(args : swagger_generator.TemplateArgs, parent_ar
                     fill_deep_object = True
             if fill_deep_object:
                 get_input_to_fill_object_arg(arg, parent_arg, key_strings)
-
-
+"""
 
 def main():
     if sys.version_info < (3, 7):
         raise Exception("Must be using at least Python 3.7")
 
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("-r", "--route",  required=False, default=False, help="Insert generated under routes", action="store_true")
+    group = arg_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--build", help="Builds all the swagger documents", action="store_true")
+    group.add_argument("--add", help="Work in progress. Dose nothing", action="store_true")
     arg_parser.add_argument("-v", "--verbose", required=False, default=False, help="Shows more information", action="store_true")
-    arg_parser.add_argument("-d", "--document", required=False, type=str, help="Path to document file")
-    arg_parser.add_argument("-t", "--template", required=False, type=str, help="Path to template file")
     parsed_cmd_args = arg_parser.parse_args()
 
-    insert_at_routes = parsed_cmd_args.route
+    build_mode = parsed_cmd_args.build
+    add_mode = parsed_cmd_args.add
     verbose = parsed_cmd_args.verbose
 
-    if not parsed_cmd_args.document:
-        question_document_file = [
-            {
-                'type': 'input',
-                'name': 'swagger_document_file',
-                'message': "Which swagger document file do you want to target",
-            },
-
-        ]
-        document_yaml_path = prompt(question_document_file)['swagger_document_file']
-    else:
-        document_yaml_path = parsed_cmd_args.document
-
-    if not parsed_cmd_args.template:
-        question_template_path = [
-            {
-                'type': 'input',
-                'name': 'template_path',
-                'message': "Where is the template you wan't to use located",
-            }
-        ]
-        args = swagger_generator.from_template(prompt(question_template_path)['template_path'])
-    else:
-        args = swagger_generator.from_template(parsed_cmd_args.template)
-
-    get_input_to_fill_templates(args)
-    if verbose:
-        print("[*] Building arguments")
-    new_swagger = args.build()
-    if verbose:
-        print(f"[*] Generated : {new_swagger}")
-    if verbose:
-        print("[*] Reading input document")
-    document_data = swagger_generator.util.read_file_yaml(document_yaml_path)
-    if insert_at_routes:
-        routes = swagger_generator.swagger_info.get_routes_info(document_data).keys()
-
-        questions = [
-            {
-                'type': 'list',
-                'name': 'route',
-                'message': 'Choose a route, where the created route should be inserted',
-                'choices': routes
-            }
-        ]
-        chosen_route = prompt(questions)["route"]
-        if verbose:
-            print("[*] Inserting created data into input document")
-        document_data = swagger_generator.insert_route_data_into_document_data_at_index(new_swagger, document_data,
-                                                                                       swagger_generator.util.find_index_in_list(
-                                                                                           routes, chosen_route) + 1)
-    else:
-        if verbose:
-            print("[*] Inserting created data into input document")
-        document_data = swagger_generator.insert_data_into_document_data_at_end(new_swagger, document_data)
-
-    if verbose:
-        print("[*] Overwriting input document")
-    swagger_generator.util.write_file_yaml(document_yaml_path, document_data)
+    if build_mode:
+        swagger_builder = swagger_generator.Builder(verbose)
+        swagger_builder.build()
+    elif add_mode:
+        pass
 
 
 if __name__ == "__main__":

@@ -89,7 +89,7 @@ class DataType:
             raise Exception(f"Data type is schema, but the given value has the type : {type(value)}")
         elif self.basic_type == "INTEGER" and not isinstance(value, self.get_python_type_from_basic_type()):
             raise Exception(f"Data type is integer, but the given value has the type : {type(value)}")
-        elif self.basic_type == "CHOOSE_ONE" and self.basic_type == "CHOOSE_ANY" and self.basic_type == "CHOOSE_ANY_LIST":
+        elif self.basic_type == "CHOOSE_ONE" or self.basic_type == "CHOOSE_ANY" or self.basic_type == "CHOOSE_ANY_LIST":
             if not isinstance(value, self.get_python_type_from_basic_type()):
                 raise Exception(f"Special data type is {self.special_data_type.lower()}, but the given value has type : {type(value)}")
             elif self.special_data_type == "OBJECT":
@@ -103,8 +103,10 @@ class DataType:
     def get_python_type_from_basic_type(self, input = None) -> type:
         if input == None:
             input = self.basic_type
-        if input == "STRING" or input == "SCHEMA":
+        if input == "STRING":
             return str
+        elif input == "SCHEMA":
+            return dict
         elif input == "INTEGER":
             return int
         elif input == "OBJECT":

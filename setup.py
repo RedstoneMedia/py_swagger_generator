@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="py-swagger-generator",
-    version="1.0.5",
+    version="1.1.0",
     description="A Package that can be used to create swagger yaml using templates",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -20,7 +20,7 @@ setup(
     license="GNU General Public License v3.0",
     packages=["swagger_generator"],
     include_package_data=True,
-    install_requires=["PyYAML>=5.3.1", "PyInquirer>=1.0.3"],
+    install_requires=["PyYAML>=5.3.1"],
     entry_points={
         "console_scripts": [
             "py-swagger-generator=swagger_generator.__main__:main",

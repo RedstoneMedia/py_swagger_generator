@@ -2,7 +2,7 @@ import re
 import random
 from copy import deepcopy
 from swagger_generator.data_type import DataType
-
+import yaml
 
 class TemplateArg:
 
@@ -27,12 +27,17 @@ class TemplateArg:
         self.data_type = None
         self.required = True
         self.multiple_type = "SINGLE"
-        self.reference_template_path = None
+        self.reference_template_file = None
+        self.reference_template_dir = None
 
         self.reference_object = None
 
         self.value = None
         self.is_filled = False
+
+    @property
+    def reference_template_path(self):
+        return f"{self.reference_template_dir}/{self.reference_template_file}"
 
     def parse_argument_data_string(self):
         args = self.arg_data_string.split(",")
@@ -72,7 +77,12 @@ class TemplateArg:
                 self.multiple_type = arg
             elif i == 4:
                 if self.data_type == "OBJECT":
-                    self.reference_template_path = arg
+                    path_split = arg.split("/")
+                    if len(path_split) == 1:
+                        self.reference_template_file = path_split[0]
+                    elif len(path_split) > 1:
+                        self.reference_template_dir = path_split[:-1]
+                        self.reference_template_file = path_split[-1]
                 else:
                     raise Exception(f"Template argument is invalid in file {self.file_name} at line {self.line_index + 1} : Argument references a template, but the data_type is {self.data_type} and not OBJECT")
         return True
@@ -105,7 +115,8 @@ class TemplateArg:
         new_object.data_type = deepcopy(self.data_type, memo=memodict)
         new_object.required = deepcopy(self.required, memo=memodict)
         new_object.multiple_type = deepcopy(self.multiple_type, memo=memodict)
-        new_object.reference_template_path = deepcopy(self.reference_template_path, memo=memodict)
+        new_object.reference_template_file = deepcopy(self.reference_template_file, memo=memodict)
+        new_object.reference_template_dir = deepcopy(self.reference_template_dir, memo=memodict)
         new_object.reference_object = deepcopy(self.reference_object, memo=memodict)
         new_object.value = deepcopy(self.value, memo=memodict)
         new_object.is_filled = deepcopy(self.is_filled, memo=memodict)
